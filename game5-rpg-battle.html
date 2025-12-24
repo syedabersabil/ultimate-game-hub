@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Battle Arena</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #8B0000 0%, #DC143C 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            text-align: center;
+            color: #8B0000;
+            margin-bottom: 20px;
+        }
+
+        .battle-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .character {
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .character.enemy {
+            background: linear-gradient(135deg, #f12711 0%, #f5af19 100%);
+        }
+
+        .character-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+
+        .character-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .health-bar {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            height: 25px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .attack-btn { background: #f44336; }
+        .defend-btn { background: #2196F3; }
+        .heal-btn { background: #4CAF50; }
+        .special-btn { background: #9C27B0; }
+
+        .battle-log {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .log-entry {
+            padding: 5px;
+            margin-bottom: 5px;
+            border-left: 3px solid #2196F3;
+            padding-left: 10px;
+        }
+
+        .log-entry.player { border-color: #4CAF50; }
+        .log-entry.enemy { border-color: #f44336; }
+        .log-entry.info { border-color: #FF9800; }
+
+        .game-info {
+            text-align: center;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .level-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            background: #8B0000;
+            color: white;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .home-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: white;
+            color: #8B0000;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .hit-animation {
+            animation: shake 0.3s;
+        }
+
+        @media (max-width: 600px) {
+            .battle-area {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="home-btn">🏠 Home</a>
+
+    <div class="container">
+        <h1>⚔️ RPG Battle Arena</h1>
+
+        <div class="game-info">
+            <span class="level-badge">Level <span id="playerLevel">1</span></span>
+            <span style="margin: 0 15px;">•</span>
+            <strong>XP:</strong> <span id="playerXP">0</span>/100
+        </div>
+
+        <div class="battle-area">
+            <div class="character player" id="playerChar">
+                <div class="character-icon">🧙</div>
+                <div class="character-name">Hero</div>
+                <div class="health-bar">
+                    <div class="health-fill" id="playerHealth" style="width: 100%">
+                        <span id="playerHealthText">100/100</span>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div>🗡️ ATK: <span id="playerAtk">20</span></div>
+                    <div>🛡️ DEF: <span id="playerDef">10</span></div>
+                    <div>✨ SP: <span id="playerSP">50</span></div>
+                </div>
+            </div>
+
+            <div class="character enemy" id="enemyChar">
+                <div class="character-icon">👹</div>
+                <div class="character-name" id="enemyName">Goblin</div>
+                <div class="health-bar">
+                    <div class="health-fill" id="enemyHealth" style="width: 100%; background: linear-gradient(90deg, #f44336 0%, #ff7961 100%)">
+                        <span id="enemyHealthText">80/80</span>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div>🗡️ ATK: <span id="enemyAtk">15</span></div>
+                    <div>🛡️ DEF: <span id="enemyDef">5</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-btn attack-btn" onclick="playerAction('attack')">🗡️ Attack</button>
+            <button class="action-btn defend-btn" onclick="playerAction('defend')">🛡️ Defend</button>
+            <button class="action-btn heal-btn" onclick="playerAction('heal')">❤️ Heal</button>
+            <button class="action-btn special-btn" onclick="playerAction('special')">✨ Special (50 SP)</button>
+        </div>
+
+        <div class="battle-log" id="battleLog"></div>
+    </div>
+
+    <script>
+        let player = {
+            hp: 100,
+            maxHp: 100,
+            atk: 20,
+            def: 10,
+            sp: 50,
+            maxSp: 50,
+            level: 1,
+            xp: 0,
+            defending: false
+        };
+
+        let enemy = {
+            hp: 80,
+            maxHp: 80,
+            atk: 15,
+            def: 5,
+            name: 'Goblin',
+            icon: '👹'
+        };
+
+        const enemies = [
+            { name: 'Goblin', icon: '👹', hp: 80, atk: 15, def: 5 },
+            { name: 'Orc', icon: '👺', hp: 120, atk: 20, def: 8 },
+            { name: 'Dragon', icon: '🐉', hp: 200, atk: 30, def: 15 }
+        ];
+
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('battleLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = message;
+            log.insertBefore(entry, log.firstChild);
+        }
+
+        function updateUI() {
+            const playerHealthPercent = (player.hp / player.maxHp) * 100;
+            document.getElementById('playerHealth').style.width = playerHealthPercent + '%';
+            document.getElementById('playerHealthText').textContent = `${player.hp}/${player.maxHp}`;
+            document.getElementById('playerSP').textContent = player.sp;
+            document.getElementById('playerLevel').textContent = player.level;
+            document.getElementById('playerXP').textContent = player.xp;
+            document.getElementById('playerAtk').textContent = player.atk;
+            document.getElementById('playerDef').textContent = player.def;
+
+            const enemyHealthPercent = (enemy.hp / enemy.maxHp) * 100;
+            document.getElementById('enemyHealth').style.width = enemyHealthPercent + '%';
+            document.getElementById('enemyHealthText').textContent = `${enemy.hp}/${enemy.maxHp}`;
+            document.getElementById('enemyName').textContent = enemy.name;
+            document.getElementById('enemyAtk').textContent = enemy.atk;
+            document.getElementById('enemyDef').textContent = enemy.def;
+        }
+
+        function playerAction(action) {
+            player.defending = false;
+
+            if (action === 'attack') {
+                const damage = Math.max(player.atk - enemy.def, 5);
+                enemy.hp -= damage;
+                addLog(`🗡️ You attack for ${damage} damage!`, 'player');
+                document.getElementById('enemyChar').classList.add('hit-animation');
+                setTimeout(() => document.getElementById('enemyChar').classList.remove('hit-animation'), 300);
+            } else if (action === 'defend') {
+                player.defending = true;
+                addLog('🛡️ You brace for defense!', 'player');
+            } else if (action === 'heal') {
+                const healAmount = 30;
+                player.hp = Math.min(player.hp + healAmount, player.maxHp);
+                addLog(`❤️ You heal for ${healAmount} HP!`, 'player');
+            } else if (action === 'special') {
+                if (player.sp >= 50) {
+                    const damage = player.atk * 2;
+                    enemy.hp -= damage;
+                    player.sp -= 50;
+                    addLog(`✨ SPECIAL ATTACK! ${damage} damage!`, 'player');
+                    document.getElementById('enemyChar').classList.add('hit-animation');
+                    setTimeout(() => document.getElementById('enemyChar').classList.remove('hit-animation'), 300);
+                } else {
+                    addLog('❌ Not enough SP!', 'info');
+                    return;
+                }
+            }
+
+            updateUI();
+
+            if (enemy.hp <= 0) {
+                enemyDefeated();
+                return;
+            }
+
+            setTimeout(enemyTurn, 1000);
+        }
+
+        function enemyTurn() {
+            if (enemy.hp < enemy.maxHp * 0.3 && Math.random() > 0.5) {
+                addLog(`🛡️ ${enemy.name} defends!`, 'enemy');
+            } else {
+                let damage = Math.max(enemy.atk - player.def, 5);
+                if (player.defending) {
+                    damage = Math.floor(damage / 2);
+                }
+                player.hp -= damage;
+                addLog(`🗡️ ${enemy.name} attacks for ${damage} damage!`, 'enemy');
+                document.getElementById('playerChar').classList.add('hit-animation');
+                setTimeout(() => document.getElementById('playerChar').classList.remove('hit-animation'), 300);
+            }
+
+            if (player.sp < player.maxSp) {
+                player.sp = Math.min(player.sp + 10, player.maxSp);
+            }
+
+            updateUI();
+
+            if (player.hp <= 0) {
+                gameOver();
+            }
+        }
+
+        function enemyDefeated() {
+            const xpGain = 30 + (player.level * 10);
+            player.xp += xpGain;
+            addLog(`🎉 ${enemy.name} defeated! +${xpGain} XP`, 'info');
+
+            if (player.xp >= 100) {
+                levelUp();
+            }
+
+            setTimeout(() => {
+                spawnEnemy();
+            }, 2000);
+        }
+
+        function levelUp() {
+            player.level++;
+            player.xp = 0;
+            player.maxHp += 20;
+            player.hp = player.maxHp;
+            player.atk += 5;
+            player.def += 3;
+            addLog(`⬆️ LEVEL UP! Now level ${player.level}!`, 'info');
+            updateUI();
+        }
+
+        function spawnEnemy() {
+            const enemyIndex = Math.min(Math.floor(player.level / 3), enemies.length - 1);
+            const template = enemies[enemyIndex];
+            enemy = {
+                name: template.name,
+                icon: template.icon,
+                hp: template.hp + (player.level * 10),
+                maxHp: template.hp + (player.level * 10),
+                atk: template.atk + (player.level * 2),
+                def: template.def + player.level
+            };
+            document.querySelector('.enemy .character-icon').textContent = enemy.icon;
+            addLog(`👾 A wild ${enemy.name} appears!`, 'enemy');
+            updateUI();
+        }
+
+        function gameOver() {
+            alert(`☠️ Game Over! You reached level ${player.level}`);
+            location.reload();
+        }
+
+        updateUI();
+        addLog('⚔️ Battle starts!', 'info');
+    </script>
+</body>
+</html>

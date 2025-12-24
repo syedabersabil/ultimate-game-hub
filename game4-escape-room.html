@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape Room Logic Puzzle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #141E30 0%, #243B55 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #ffd700;
+        }
+
+        .room-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+
+        .story {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .puzzle-area {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .puzzle-question {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #000;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .option-btn {
+            padding: 15px;
+            background: rgba(255, 215, 0, 0.3);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .option-btn:hover {
+            background: rgba(255, 215, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .inventory {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .inventory-items {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .item {
+            padding: 8px 15px;
+            background: rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #ffd700 0%, #ff6b6b 100%);
+            color: white;
+        }
+
+        .btn-hint {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .hint-box {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ffd700;
+        }
+
+        .home-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="home-btn">🏠 Home</a>
+
+    <div class="container">
+        <h1>🧩 Escape Room Challenge</h1>
+
+        <div class="room-info">
+            <h2 id="roomTitle">Room 1: The Number Lock</h2>
+            <p>Solve puzzles to unlock the door and escape!</p>
+        </div>
+
+        <div class="timer" id="timer">05:00</div>
+
+        <div class="inventory">
+            <strong>🎒 Inventory:</strong>
+            <div class="inventory-items" id="inventory"></div>
+        </div>
+
+        <div class="story" id="story"></div>
+
+        <div class="puzzle-area" id="puzzleArea"></div>
+
+        <div id="hintArea"></div>
+
+        <button class="btn btn-hint" onclick="showHint()">Get Hint 💡</button>
+    </div>
+
+    <script>
+        let currentRoom = 0;
+        let inventory = [];
+        let timeLeft = 300;
+        let timerInterval;
+        let hintsUsed = 0;
+
+        const rooms = [
+            {
+                title: 'Room 1: The Number Lock',
+                story: '🚪 You wake up in a mysterious room. There\'s a door with a number lock. On the wall, you see: "I am an odd number. Take away one letter and I become even. What number am I?"',
+                type: 'input',
+                answer: '7',
+                hint: 'Think about the word SEVEN. Remove the S and you get EVEN!',
+                item: 'Golden Key'
+            },
+            {
+                title: 'Room 2: The Pattern Door',
+                story: '🏛️ You enter a chamber with symbols on the wall: ⭐ 🌙 ☀️ ⭐ 🌙 ?. What comes next?',
+                type: 'options',
+                options: ['☀️ Sun', '🌙 Moon', '⭐ Star', '⚡ Lightning'],
+                answer: '☀️ Sun',
+                hint: 'Look at the pattern: Star, Moon, Sun repeats!',
+                item: 'Silver Coin'
+            },
+            {
+                title: 'Room 3: The Math Chamber',
+                story: '📊 You find a locked chest with a riddle: "If 2 + 3 = 10, 6 + 5 = 66, then 8 + 4 = ?"',
+                type: 'input',
+                answer: '48',
+                hint: 'The pattern is (first number - 1) * second number. So (8-1) * 4 = 28... wait, or is it first * (second-1)? Try 8 * (4+2)!',
+                item: 'Bronze Medal'
+            },
+            {
+                title: 'Room 4: The Final Escape',
+                story: '🏆 Final challenge! Count your inventory items. Multiply by the number of hints you used. What\'s the result?',
+                type: 'input',
+                answer: '',
+                hint: 'Just multiply the number of items you collected by hints used!',
+                item: null
+            }
+        ];
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    alert('⌛ Time\'s up! Game Over!');
+                    location.reload();
+                }
+            }, 1000);
+        }
+
+        function loadRoom() {
+            const room = rooms[currentRoom];
+            document.getElementById('roomTitle').textContent = room.title;
+            document.getElementById('story').textContent = room.story;
+            document.getElementById('hintArea').innerHTML = '';
+
+            const puzzleArea = document.getElementById('puzzleArea');
+            puzzleArea.innerHTML = '';
+
+            if (currentRoom === 3) {
+                room.answer = String(inventory.length * hintsUsed);
+            }
+
+            if (room.type === 'input') {
+                puzzleArea.innerHTML = `
+                    <div class="puzzle-question">Enter your answer:</div>
+                    <input type="text" class="answer-input" id="answerInput" placeholder="Type your answer...">
+                    <button class="btn btn-submit" onclick="checkAnswer()">Submit Answer</button>
+                `;
+                document.getElementById('answerInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') checkAnswer();
+                });
+            } else if (room.type === 'options') {
+                let optionsHTML = '<div class="puzzle-question">Choose the correct answer:</div><div class="options">';
+                room.options.forEach(option => {
+                    optionsHTML += `<button class="option-btn" onclick="checkAnswer('${option}')">${option}</button>`;
+                });
+                optionsHTML += '</div>';
+                puzzleArea.innerHTML = optionsHTML;
+            }
+        }
+
+        function checkAnswer(selectedOption) {
+            const room = rooms[currentRoom];
+            let userAnswer;
+
+            if (room.type === 'input') {
+                userAnswer = document.getElementById('answerInput').value.trim();
+            } else {
+                userAnswer = selectedOption;
+            }
+
+            if (userAnswer.toLowerCase() === room.answer.toLowerCase()) {
+                if (room.item) {
+                    inventory.push(room.item);
+                    updateInventory();
+                }
+
+                if (currentRoom < rooms.length - 1) {
+                    alert('✅ Correct! Moving to next room...');
+                    currentRoom++;
+                    loadRoom();
+                } else {
+                    clearInterval(timerInterval);
+                    alert(`🎉 Congratulations! You escaped! Time: ${300 - timeLeft}s, Hints: ${hintsUsed}`);
+                    location.reload();
+                }
+            } else {
+                alert('❌ Wrong answer! Try again.');
+            }
+        }
+
+        function showHint() {
+            const room = rooms[currentRoom];
+            hintsUsed++;
+            document.getElementById('hintArea').innerHTML = `
+                <div class="hint-box">
+                    <strong>💡 Hint:</strong> ${room.hint}
+                </div>
+            `;
+        }
+
+        function updateInventory() {
+            const inventoryEl = document.getElementById('inventory');
+            inventoryEl.innerHTML = '';
+            inventory.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'item';
+                itemEl.textContent = item;
+                inventoryEl.appendChild(itemEl);
+            });
+        }
+
+        startTimer();
+        loadRoom();
+    </script>
+</body>
+</html>

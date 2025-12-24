@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Puzzle Master</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #fc4a1a;
+            margin-bottom: 20px;
+        }
+
+        .category-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 10px 15px;
+            border: 2px solid #fc4a1a;
+            background: white;
+            color: #fc4a1a;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .category-btn.active {
+            background: #fc4a1a;
+            color: white;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fff3e0;
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .word-display {
+            text-align: center;
+            font-size: 2.5rem;
+            letter-spacing: 10px;
+            margin: 30px 0;
+            font-weight: bold;
+            color: #fc4a1a;
+            min-height: 80px;
+        }
+
+        .keyboard {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .key {
+            padding: 15px;
+            background: #fc4a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .key:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(252, 74, 26, 0.4);
+        }
+
+        .key:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-hint {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-new {
+            background: #2196F3;
+            color: white;
+        }
+
+        .home-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: white;
+            color: #fc4a1a;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .word-display {
+                font-size: 1.8rem;
+                letter-spacing: 5px;
+            }
+            .keyboard {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="home-btn">🏠 Home</a>
+
+    <div class="container">
+        <h1>🔤 Word Puzzle Master</h1>
+
+        <div class="category-selector">
+            <button class="category-btn active" onclick="setCategory('animals')">Animals</button>
+            <button class="category-btn" onclick="setCategory('movies')">Movies</button>
+            <button class="category-btn" onclick="setCategory('science')">Science</button>
+            <button class="category-btn" onclick="setCategory('countries')">Countries</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div>Score</div>
+                <div id="score" style="font-size: 1.5rem; font-weight: bold;">0</div>
+            </div>
+            <div class="stat-item">
+                <div>Streak</div>
+                <div id="streak" style="font-size: 1.5rem; font-weight: bold;">0</div>
+            </div>
+            <div class="stat-item">
+                <div>Hints</div>
+                <div id="hints" style="font-size: 1.5rem; font-weight: bold;">3</div>
+            </div>
+        </div>
+
+        <div class="word-display" id="wordDisplay"></div>
+
+        <div class="message" id="message" style="background: #e3f2fd; color: #1976d2;">Select letters to guess the word!</div>
+
+        <div class="keyboard" id="keyboard"></div>
+
+        <div class="controls">
+            <button class="btn btn-hint" onclick="useHint()">Use Hint</button>
+            <button class="btn btn-new" onclick="newWord()">New Word</button>
+        </div>
+    </div>
+
+    <script>
+        const wordBank = {
+            animals: ['ELEPHANT', 'TIGER', 'GIRAFFE', 'DOLPHIN', 'PENGUIN', 'KANGAROO', 'LEOPARD', 'ZEBRA'],
+            movies: ['AVATAR', 'INCEPTION', 'TITANIC', 'INTERSTELLAR', 'GLADIATOR', 'MATRIX', 'JOKER'],
+            science: ['QUANTUM', 'GRAVITY', 'ELECTRON', 'MOLECULE', 'NEUTRON', 'PHOTON', 'ATOM'],
+            countries: ['INDIA', 'BRAZIL', 'JAPAN', 'FRANCE', 'GERMANY', 'AUSTRALIA', 'CANADA', 'MEXICO']
+        };
+
+        let currentCategory = 'animals';
+        let currentWord = '';
+        let guessedLetters = [];
+        let score = 0;
+        let streak = 0;
+        let hintsLeft = 3;
+        let wrongAttempts = 0;
+
+        function initKeyboard() {
+            const keyboard = document.getElementById('keyboard');
+            keyboard.innerHTML = '';
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            
+            for (let letter of letters) {
+                const key = document.createElement('button');
+                key.className = 'key';
+                key.textContent = letter;
+                key.onclick = () => guessLetter(letter);
+                keyboard.appendChild(key);
+            }
+        }
+
+        function setCategory(category) {
+            currentCategory = category;
+            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            newWord();
+        }
+
+        function newWord() {
+            const words = wordBank[currentCategory];
+            currentWord = words[Math.floor(Math.random() * words.length)];
+            guessedLetters = [];
+            wrongAttempts = 0;
+            initKeyboard();
+            updateDisplay();
+            showMessage('Guess the word! Good luck! 🍀', '#e3f2fd', '#1976d2');
+        }
+
+        function guessLetter(letter) {
+            if (guessedLetters.includes(letter)) return;
+            
+            guessedLetters.push(letter);
+            const key = Array.from(document.querySelectorAll('.key')).find(k => k.textContent === letter);
+            key.disabled = true;
+
+            if (currentWord.includes(letter)) {
+                showMessage('Correct letter! ✅', '#d4edda', '#155724');
+                updateDisplay();
+                
+                if (isWordComplete()) {
+                    const points = (currentWord.length * 10) + (hintsLeft * 5) - (wrongAttempts * 2);
+                    score += Math.max(points, 10);
+                    streak++;
+                    document.getElementById('score').textContent = score;
+                    document.getElementById('streak').textContent = streak;
+                    showMessage(`🎉 Correct! +${Math.max(points, 10)} points!`, '#d4edda', '#155724');
+                    setTimeout(newWord, 2000);
+                }
+            } else {
+                wrongAttempts++;
+                showMessage('Wrong letter! ❌ Try again', '#f8d7da', '#721c24');
+                
+                if (wrongAttempts >= 6) {
+                    streak = 0;
+                    document.getElementById('streak').textContent = streak;
+                    showMessage(`Game Over! Word was: ${currentWord}`, '#f8d7da', '#721c24');
+                    setTimeout(newWord, 2500);
+                }
+            }
+        }
+
+        function updateDisplay() {
+            let display = '';
+            for (let letter of currentWord) {
+                display += guessedLetters.includes(letter) ? letter + ' ' : '_ ';
+            }
+            document.getElementById('wordDisplay').textContent = display;
+        }
+
+        function isWordComplete() {
+            return currentWord.split('').every(letter => guessedLetters.includes(letter));
+        }
+
+        function useHint() {
+            if (hintsLeft === 0) {
+                showMessage('No hints left!', '#fff3cd', '#856404');
+                return;
+            }
+            
+            const unguessedLetters = currentWord.split('').filter(letter => !guessedLetters.includes(letter));
+            if (unguessedLetters.length > 0) {
+                const hintLetter = unguessedLetters[0];
+                guessLetter(hintLetter);
+                hintsLeft--;
+                document.getElementById('hints').textContent = hintsLeft;
+            }
+        }
+
+        function showMessage(text, bgColor, textColor) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.style.background = bgColor;
+            msg.style.color = textColor;
+        }
+
+        newWord();
+    </script>
+</body>
+</html>
