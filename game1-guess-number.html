@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Number - Level System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+        .level-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .input-area {
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .home-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: white;
+            color: #1e3c72;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="home-btn">🏠 Home</a>
+    
+    <div class="game-container">
+        <h1>🎯 Guess the Number</h1>
+        
+        <div class="level-info">
+            <h2 id="levelTitle">Level 1</h2>
+            <p id="levelRange">Guess between 1 and 50</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Attempts</div>
+                <div class="stat-value" id="attempts">10</div>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar" style="width: 100%"></div>
+        </div>
+
+        <div class="message" id="message">Start guessing! Good luck! 🍀</div>
+
+        <div class="input-area">
+            <input type="number" id="guessInput" placeholder="Enter your guess">
+            <button class="btn btn-primary" onclick="makeGuess()">Submit Guess</button>
+            <button class="btn btn-secondary" onclick="resetGame()">Restart Level</button>
+        </div>
+    </div>
+
+    <script>
+        let currentLevel = 1;
+        let score = 0;
+        let targetNumber;
+        let maxAttempts;
+        let attemptsLeft;
+        let levelConfig = {
+            1: { min: 1, max: 50, attempts: 10 },
+            2: { min: 1, max: 100, attempts: 12 },
+            3: { min: 1, max: 500, attempts: 15 }
+        };
+
+        function initLevel() {
+            const config = levelConfig[currentLevel];
+            targetNumber = Math.floor(Math.random() * (config.max - config.min + 1)) + config.min;
+            maxAttempts = config.attempts;
+            attemptsLeft = maxAttempts;
+            
+            document.getElementById('levelTitle').textContent = `Level ${currentLevel}`;
+            document.getElementById('levelRange').textContent = `Guess between ${config.min} and ${config.max}`;
+            document.getElementById('level').textContent = currentLevel;
+            document.getElementById('attempts').textContent = attemptsLeft;
+            updateProgressBar();
+            showMessage('Start guessing! Good luck! 🍀', 'info');
+        }
+
+        function makeGuess() {
+            const guess = parseInt(document.getElementById('guessInput').value);
+            const config = levelConfig[currentLevel];
+
+            if (isNaN(guess) || guess < config.min || guess > config.max) {
+                showMessage(`Please enter a number between ${config.min} and ${config.max}`, 'error');
+                return;
+            }
+
+            attemptsLeft--;
+            document.getElementById('attempts').textContent = attemptsLeft;
+            updateProgressBar();
+
+            const difference = Math.abs(guess - targetNumber);
+
+            if (guess === targetNumber) {
+                const pointsEarned = attemptsLeft * 10;
+                score += pointsEarned;
+                document.getElementById('score').textContent = score;
+                showMessage(`🎉 Correct! You earned ${pointsEarned} points!`, 'success');
+                
+                setTimeout(() => {
+                    if (currentLevel < 3) {
+                        currentLevel++;
+                        initLevel();
+                        showMessage(`Level Up! Welcome to Level ${currentLevel}! 🚀`, 'success');
+                    } else {
+                        showMessage(`🏆 Game Complete! Final Score: ${score}`, 'success');
+                    }
+                }, 2000);
+            } else if (attemptsLeft === 0) {
+                showMessage(`❌ Game Over! The number was ${targetNumber}`, 'error');
+                setTimeout(() => resetGame(), 2000);
+            } else {
+                if (difference <= 5) {
+                    showMessage('🔥 Very Close! Almost there!', 'warning');
+                } else if (guess > targetNumber) {
+                    showMessage('📉 Too High! Try a smaller number', 'info');
+                } else {
+                    showMessage('📈 Too Low! Try a bigger number', 'info');
+                }
+            }
+
+            document.getElementById('guessInput').value = '';
+        }
+
+        function updateProgressBar() {
+            const percentage = (attemptsLeft / maxAttempts) * 100;
+            document.getElementById('progressBar').style.width = percentage + '%';
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = 'message ' + type;
+        }
+
+        function resetGame() {
+            currentLevel = 1;
+            score = 0;
+            document.getElementById('score').textContent = score;
+            initLevel();
+        }
+
+        document.getElementById('guessInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') makeGuess();
+        });
+
+        initLevel();
+    </script>
+</body>
+</html>
